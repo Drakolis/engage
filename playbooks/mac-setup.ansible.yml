@@ -1,0 +1,57 @@
+---
+  - name: Install/Update Critical CLI Utils
+    community.general.homebrew:
+      name: "{{ item }}"
+    with_items:
+      - zsh
+      - git
+      - curl
+      - wget
+      - gnupg
+
+  - name: Install/Update Important CLI Utils
+    community.general.homebrew:
+      name: "{{ item }}"
+    with_items:
+      - htop
+      - eza
+      - vim
+      - midnight-commander
+      - bat
+      - ctags
+      - fzf
+      - asdf
+      - neofetch
+
+  - name: Install/Update Useful CLI Utils
+    community.general.homebrew:
+      name: "{{ item }}"
+    with_items:
+      - ffmpeg
+      - scc
+      - duf
+      - exiftool
+      - entr
+      - lolcat
+      - ansible-lint
+
+  - name: Install/Update Desktop Apps
+    community.general.homebrew:
+      name: "{{ item }}"
+    with_items:
+      - iterm2@nightly
+      - dbeaver-community
+      - visual-studio-code
+      - firefox
+      - maccy
+      - vial
+      - obsidian
+      - numi
+    ignore_errors: true # Some tools might be installed another way, and that's okay
+
+  - name: Install/Update Fonts
+    community.general.homebrew:
+      name: "{{ item }}"
+    with_items:
+      - font-meslo-for-powerlevel10k
+      - font-open-dyslexic

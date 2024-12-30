@@ -1,0 +1,184 @@
+---
+- name: Engage!
+  hosts: localhost
+  gather_facts: true  # Ensure platform facts are gathered
+
+  tasks:
+    - name: Setup macOS
+      ansible.builtin.include_tasks: playbooks/mac-setup.ansible.yml
+      when: ansible_facts.os_family == 'Darwin'
+
+    - name: Install/Update Oh My Zsh
+      ansible.builtin.shell: |
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+      args:
+        creates: ~/.oh-my-zsh
+
+    - name: Zsh Theme - Powerlevel10k
+      ansible.builtin.git:
+        repo: https://github.com/romkatv/powerlevel10k.git
+        dest: "{{ ansible_env.HOME }}/.oh-my-zsh/custom/themes/powerlevel10k"
+        version: master
+
+    - name: Zsh Plugin - Zsh Syntax Highlighting
+      ansible.builtin.git:
+        repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+        dest: "{{ ansible_env.HOME }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+        version: master
+
+    - name: Zsh Plugin - Zsh Autosuggestions
+      ansible.builtin.git:
+        repo: https://github.com/zsh-users/zsh-autosuggestions.git
+        dest: "{{ ansible_env.HOME }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+        version: master
+
+    - name: Get Zsh Path
+      ansible.builtin.command: which zsh
+      register: which_zsh
+      changed_when: true
+
+    # - name: Change Shell to Zsh
+    #   when: ansible_env.SHELL != which_zsh.stdout
+    #   ansible.builtin.command: chsh -s "{{ which_zsh.stdout }}" "{{ ansible_env.USER }}"
+    #   become: true
+    #   changed_when: true
+
+    - name: Configuration Files Update
+      ansible.builtin.copy:
+        src: "config/{{ item }}"
+        dest: "{{ ansible_env.HOME }}/{{ item }}"
+        mode: '0644'
+      loop:
+        - .bashrc
+        - .zshrc
+        - .p10k.zsh
+        - .vimrc
+
+    - name: VimPlug Install
+      ansible.builtin.uri:
+        url: https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+        dest: ~/.vim/autoload/plug.vim
+        mode: '0644'
+      args:
+        creates: ~/.vim/autoload/plug.vim
+
+    - name: Get Bat Configuration FolderLocation
+      ansible.builtin.command: bat --config-dir
+      register: bat_config_folder
+      changed_when: true
+
+    - name: Bat Configuration and Themes Directory
+      ansible.builtin.command: mkdir -p "{{ bat_config_folder.stdout }}/themes"
+      ignore_errors: true
+      args:
+        creates: "{{ bat_config_folder.stdout }}/themes"
+
+    - name: Bat Theme
+      ansible.builtin.uri:
+        url: https://github.com/catppuccin/bat/raw/main/themes/Catppuccin%20Mocha.tmTheme
+        dest: "{{ bat_config_folder.stdout }}/themes"
+        mode: '0644'
+      args:
+        creates: "{{ bat_config_folder.stdout }}/themes/Catppuccin Mocha.tmTheme"
+
+    - name: Get Bat Configuration File Location
+      ansible.builtin.command: bat --config-file
+      register: bat_config_file
+      changed_when: true
+
+    - name: Bat Configuration
+      ansible.builtin.copy:
+        src: "config/bat.conf"
+        dest: "{{ bat_config_file.stdout }}"
+        mode: '0644'
+
+    - name: Rebuild Bat Cache
+      ansible.builtin.command: bat cache --build
+      changed_when: true
+
+    # This looks like crap!!
+    - name: MidnightCommander Theme
+      ansible.builtin.shell: |
+        mkdir -p ~/.local/share/mc/skins && cd ~/.local/share/mc/skins && git clone https://github.com/catppuccin/mc.git && ln -s -f ./mc/catppuccin.ini .
+      args:
+        creates: ~/.local/share/mc/skins/mc/catppuccin.ini
+
+    - name: MidnightCommander Configuration Directory
+      ansible.builtin.command: mkdir -p ~/.config/mc
+      ignore_errors: true
+      args:
+        creates: ~/.config/mc
+
+    - name: MidnightCommander Configuration
+      ansible.builtin.copy:
+        src: "config/mc.ini"
+        dest: "{{ ansible_env.HOME }}/.config/mc/ini"
+        mode: '0644'
+
+    - name: Neofetch Configuration Directory
+      ansible.builtin.command: mkdir -p ~/.config/neofetch
+      ignore_errors: true
+      args:
+        creates: ~/.config/neofetch
+
+    - name: Neofetch Configuration
+      ansible.builtin.copy:
+        src: "config/neofetch.conf"
+        dest: "{{ ansible_env.HOME }}/.config/neofetch/config.conf"
+        mode: '0644'
+
+    - name: ASDF - NodeJS
+      ansible.builtin.shell: asdf plugin add nodejs && asdf install nodejs latest
+      args:
+        creates:
+          - ~/.asdf/plugins/nodejs
+          - ~/.asdf/installs/nodejs
+
+    - name: ASDF - Yarn
+      ansible.builtin.shell: asdf plugin add yarn && asdf install yarn latest
+      args:
+        creates:
+          - ~/.asdf/plugins/yarn
+          - ~/.asdf/installs/yarn
+
+    - name: ASDF - Python
+      ansible.builtin.shell: asdf plugin add python && asdf install python latest
+      args:
+        creates:
+          - ~/.asdf/plugins/python
+          - ~/.asdf/installs/python
+
+    - name: ASDF - Java
+      ansible.builtin.shell: asdf plugin add java && asdf install java latest
+      args:
+        creates:
+          - ~/.asdf/plugins/java
+          - ~/.asdf/installs/java
+
+    - name: ASDF - Maven
+      ansible.builtin.shell: asdf plugin add maven && asdf install maven latest
+      args:
+        creates:
+          - ~/.asdf/plugins/maven
+          - ~/.asdf/installs/maven
+
+    - name: ASDF - Ruby
+      ansible.builtin.shell: asdf plugin add ruby && asdf install ruby latest
+      args:
+        creates:
+          - ~/.asdf/plugins/ruby
+          - ~/.asdf/installs/ruby
+
+    - name: ASDF - Rust
+      ansible.builtin.shell: asdf plugin add rust && asdf install rust latest
+      args:
+        creates:
+          - ~/.asdf/plugins/rust
+          - ~/.asdf/installs/rust
+
+    - name: ASDF - Terraform
+      ansible.builtin.shell: asdf plugin add terraform && asdf install terraform latest
+      args:
+        creates:
+          - ~/.asdf/plugins/terraform
+          - ~/.asdf/installs/terraform
